@@ -273,14 +273,17 @@ export function attachSlashCommandHandlerToClient(client: Client, devServers: st
                 } catch (error) {
                     const errorMessage = error?.stack ?? error;
                     console.error(errorMessage); // TODO: Add the executed command info.
-                    interaction.reply(
-                        `There was an error while trying to execute that command!\n\`\`\`${errorMessage}\`\`\``
-                    );
+                    interaction.reply({
+                        content: `There was an error while trying to execute that command!\n\`\`\`${errorMessage}\`\`\``,
+                        ephemeral: true
+                    });
                 }
             } else {
-                interaction.reply(
-                    "Sorry, this command didn't match anything (add more text here about potential codebase error or outdated slash commands)"
-                );
+                interaction.reply({
+                    content:
+                        "Sorry, this command didn't match anything. There's a chance this command was removed from the codebase, but hasn't been removed from Discord's registry yet.",
+                    ephemeral: true
+                });
             }
         }
     });
