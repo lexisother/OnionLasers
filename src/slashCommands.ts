@@ -4,19 +4,23 @@ import {
     CommandInteraction,
     ApplicationCommandData,
     ApplicationCommandOptionData,
-    ApplicationCommandOptionChoice
+    ApplicationCommandOptionChoice,
+    ApplicationCommandOption
 } from "discord.js";
 import {slashCommandRegistry} from "./loader";
 import {NO_DESCRIPTION} from "./util";
 
 export enum SlashCommandOptionType {
+    SUBCOMMAND = 1,
+    SUBCOMMANDGROUP = 2,
     STRING = 3,
     INTEGER = 4,
     BOOLEAN = 5,
     USER = 6,
     CHANNEL = 7,
     ROLE = 8,
-    MENTIONABLE = 9
+    MENTIONABLE = 9,
+    NUMBER = 10
 }
 
 interface RestrictedApplicationCommandOptionBase {
@@ -56,7 +60,7 @@ interface SlashCommandOptionsRootBase {
 interface SlashCommandOptionsRootEndpoint extends SlashCommandOptionsRootBase {
     readonly ephemeral?: boolean;
     readonly run?: (interaction: CommandInteraction) => Promise<any> | string;
-    readonly options?: RestrictedApplicationCommandOption[];
+    readonly options?: ApplicationCommandOption[];
     readonly subcommands?: undefined;
 }
 
@@ -73,7 +77,7 @@ interface SlashCommandOptionsNodeBase {
 interface SlashCommandOptionsEndpoint extends SlashCommandOptionsNodeBase {
     readonly ephemeral?: boolean;
     readonly run?: (interaction: CommandInteraction) => Promise<any> | string;
-    readonly options?: RestrictedApplicationCommandOption[];
+    readonly options?: ApplicationCommandOption[];
     readonly subcommands?: undefined;
 }
 
@@ -88,9 +92,15 @@ type SlashCommandOptionsNode = SlashCommandOptionsEndpoint | SlashCommandOptions
 
 export class SlashCommand {
     private readonly data: SlashCommandOptionsRoot;
+    private run?: (interaction: CommandInteraction) => Promise<any> | string;
 
     constructor(data: SlashCommandOptionsRoot = {}) {
         this.data = data;
+        if ("run" in data) {
+            this.run = data.run;
+        } else {
+            this.run = undefined;
+        }
     }
 
     /**
@@ -104,13 +114,13 @@ export class SlashCommand {
 
             for (const [header, subcommand] of Object.entries(this.data.subcommands)) {
                 if (subcommand.subcommands) {
-                    const suboptions: ApplicationCommandOptionData[] = [];
+                    const suboptions: ApplicationCommandOption[] = [];
 
                     for (const [subheader, subsubcommand] of Object.entries(subcommand.subcommands)) {
                         suboptions.push({
                             name: subheader,
                             description: subsubcommand.description || NO_DESCRIPTION,
-                            type: 1, // SUBCOMMAND
+                            type: "Subcommand", // SUBCOMMAND
                             options: SlashCommand.getOptionsArray(subsubcommand.options)
                         });
                     }
@@ -143,29 +153,35 @@ export class SlashCommand {
     }
 
     public async execute(interaction: CommandInteraction) {
-        interaction.reply("Soon:tm:");
+        if (typeof this.run === "string") {
+            interaction.reply(this.run);
+        } else {
+            try {
+                await this.run?.(interaction);
+            } catch (error) {
+                const errorMessage = error.stack ?? error;
+
+                return `There was an error trying to execute that command!\n\`\`\`${errorMessage}\`\`\``;
+            }
+        }
+
+        return null;
     }
 
-    private static getOptionsArray(
-        data?: RestrictedApplicationCommandOption[]
-    ): ApplicationCommandOptionData[] | undefined {
+    private static getOptionsArray(data?: ApplicationCommandOption[]): ApplicationCommandOption[] | undefined {
         if (!data) return undefined;
 
-        const options: ApplicationCommandOptionData[] = [];
+        const options: ApplicationCommandOption[] = [];
 
         for (const inboundOptions of data) {
             const {type, name, description, required} = inboundOptions;
             let choices: ApplicationCommandOptionChoice[] | undefined;
 
             // Apparently, inboundOptions.type must be used instead of type. Don't ask me why.
-            if (
-                (inboundOptions.type === SlashCommandOptionType.STRING ||
-                    inboundOptions.type === SlashCommandOptionType.INTEGER) &&
-                inboundOptions.choices
-            ) {
+            if ((inboundOptions.type === "String" || inboundOptions.type === "Integer") && inboundOptions.choices) {
                 choices = [];
 
-                for (const [name, value] of Object.entries(inboundOptions.choices)) {
+                for (const {name, value} of inboundOptions.choices) {
                     choices.push({name, value});
                 }
             } else {

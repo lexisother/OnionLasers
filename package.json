@@ -13,7 +13,8 @@
         "patch": "node patch.js"
     },
     "dependencies": {
-        "discord.js": "github:discordjs/discord.js",
+        "discord-api-types": "^0.23.1",
+        "discord.js": "github:discordjs/discord.js#d455cb65a6188e7d7b6720848b5ce37dbf8b5dff",
         "glob": "^7.1.6"
     },
     "devDependencies": {
