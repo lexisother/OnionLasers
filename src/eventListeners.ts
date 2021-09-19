@@ -16,7 +16,7 @@ export function attachEventListenersToClient(client: Client) {
         const hasReactionHandler = reactEventListeners.has(reaction.message.id);
 
         if (hasReactionHandler) {
-            reactEventListeners.get(reaction.message.id)!(reaction, user);
+            reactEventListeners.get(reaction.message.id)!(reaction as MessageReaction, user);
             // Remove the reaction if that specific message has a reaction handler attached, the bot has permission to do so, and the user isn't a bot.
             // It's VERY important this is contained within the check, otherwise, the bot will remove all reactions regardless of the message source.
             if (canDeleteEmotes && !user.partial && !user.bot) reaction.users.remove(user);
@@ -26,7 +26,7 @@ export function attachEventListenersToClient(client: Client) {
     client.on("messageReactionRemove", (reaction, user) => {
         const canDeleteEmotes = reaction.message.guild?.me?.permissions.has(Permissions.FLAGS.MANAGE_MESSAGES);
         // If reactions aren't automatically removed, then call the event listener again.
-        if (!canDeleteEmotes) reactEventListeners.get(reaction.message.id)?.(reaction, user);
+        if (!canDeleteEmotes) reactEventListeners.get(reaction.message.id)?.(reaction as MessageReaction, user);
     });
 
     client.on("messageReactionRemoveAll", (message) => {
@@ -39,7 +39,7 @@ export function attachEventListenersToClient(client: Client) {
         // If there's an inline reply, fire off that event listener (if it exists).
         if (message.reference) {
             const reference = message.reference;
-            replyEventListeners.get(`${reference.channelID}-${reference.messageID}`)?.(message);
+            replyEventListeners.get(`${reference.channelId}-${reference.messageId}`)?.(message);
         }
     });
 }

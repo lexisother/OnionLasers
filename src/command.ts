@@ -2,13 +2,12 @@ import {
     Collection,
     Client,
     Message,
-    TextChannel,
-    DMChannel,
-    NewsChannel,
     Guild,
     User,
     GuildMember,
-    GuildChannel
+    GuildChannel,
+    TextBasedChannels,
+    TextChannel
 } from "discord.js";
 import {getChannelByID, getGuildByID, getMessageByID, getUserByID, SendFunction} from "./lib";
 import {hasPermission, getPermissionLevel, getPermissionName} from "./permissions";
@@ -57,11 +56,12 @@ export enum CHANNEL_TYPE {
     DM
 }
 
-interface CommandMenu {
+export interface CommandMenu {
     readonly args: any[];
     readonly client: Client;
     readonly message: Message;
-    readonly channel: TextChannel | DMChannel | NewsChannel;
+    // readonly channel: TextChannel | DMChannel | PartialDMChannel | NewsChannel | ThreadChannel;
+    readonly channel: TextBasedChannels;
     readonly guild: Guild | null;
     readonly author: User;
     // According to the documentation, a message can be part of a guild while also not having a
@@ -709,13 +709,13 @@ function canExecute(menu: CommandMenu, metadata: ExecuteCommandMetadata): string
         return "This command must be executed in a server.";
     } else if (
         metadata.channelType === CHANNEL_TYPE.DM &&
-        (menu.channel.type !== "dm" || menu.guild !== null || menu.member !== null)
+        (menu.channel.type !== "DM" || menu.guild !== null || menu.member !== null)
     ) {
         return "This command must be executed as a direct message.";
     }
 
     // 2. Is this an NSFW command where the channel prevents such use? (DM channels bypass this requirement.)
-    if (metadata.nsfw && menu.channel.type !== "dm" && !menu.channel.nsfw) {
+    if (metadata.nsfw && menu.channel.type !== "DM" && !(menu.channel as TextChannel).nsfw) {
         return "This command must be executed in either an NSFW channel or as a direct message.";
     }
 

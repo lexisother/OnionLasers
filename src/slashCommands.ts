@@ -5,14 +5,17 @@ import {
     ApplicationCommandData,
     ApplicationCommandOptionData,
     ApplicationCommandOptionChoice,
-    ApplicationCommandOption
+    ApplicationCommandOption,
+    ApplicationCommandNonOptionsData,
+    ApplicationCommandChoicesData,
+    ApplicationCommandSubCommandData
 } from "discord.js";
 import {slashCommandRegistry} from "./loader";
 import {NO_DESCRIPTION} from "./util";
 
 export enum SlashCommandOptionType {
-    SUBCOMMAND = 1,
-    SUBCOMMANDGROUP = 2,
+    SUB_COMMAND = 1,
+    SUB_COMMAND_GROUP = 2,
     STRING = 3,
     INTEGER = 4,
     BOOLEAN = 5,
@@ -114,13 +117,13 @@ export class SlashCommand {
 
             for (const [header, subcommand] of Object.entries(this.data.subcommands)) {
                 if (subcommand.subcommands) {
-                    const suboptions: ApplicationCommandOption[] = [];
+                    const suboptions: (ApplicationCommandNonOptionsData | ApplicationCommandChoicesData)[] = [];
 
                     for (const [subheader, subsubcommand] of Object.entries(subcommand.subcommands)) {
                         suboptions.push({
                             name: subheader,
                             description: subsubcommand.description || NO_DESCRIPTION,
-                            type: "Subcommand", // SUBCOMMAND
+                            type: 1, // SUB_COMMAND
                             options: SlashCommand.getOptionsArray(subsubcommand.options)
                         });
                     }
@@ -128,14 +131,14 @@ export class SlashCommand {
                     options.push({
                         name: header,
                         description: subcommand.description || NO_DESCRIPTION,
-                        type: 2, // SUBCOMMAND_GROUP
+                        type: 2, // SUB_COMMAND_GROUP
                         options: suboptions
                     });
                 } else {
                     options.push({
                         name: header,
                         description: subcommand.description || NO_DESCRIPTION,
-                        type: 1, // SUBCOMMAND
+                        type: 1, // SUB_COMMAND
                         options: SlashCommand.getOptionsArray(subcommand.options)
                     });
                 }
@@ -168,17 +171,17 @@ export class SlashCommand {
         return null;
     }
 
-    private static getOptionsArray(data?: ApplicationCommandOption[]): ApplicationCommandOption[] | undefined {
+    private static getOptionsArray(data?: ApplicationCommandOption[]): ApplicationCommandOptionData[] | undefined {
         if (!data) return undefined;
 
-        const options: ApplicationCommandOption[] = [];
+        const options: ApplicationCommandOptionData[] = [];
 
         for (const inboundOptions of data) {
             const {type, name, description, required} = inboundOptions;
             let choices: ApplicationCommandOptionChoice[] | undefined;
 
             // Apparently, inboundOptions.type must be used instead of type. Don't ask me why.
-            if ((inboundOptions.type === "String" || inboundOptions.type === "Integer") && inboundOptions.choices) {
+            if ((inboundOptions.type === "STRING" || inboundOptions.type === "INTEGER") && inboundOptions.choices) {
                 choices = [];
 
                 for (const {name, value} of inboundOptions.choices) {

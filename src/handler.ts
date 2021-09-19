@@ -1,5 +1,6 @@
 import {Client, Permissions, Message, TextChannel, DMChannel, NewsChannel} from "discord.js";
 import {getPrefix, loadableCommands} from "./interface";
+import {CommandMenu} from "./command";
 
 // For custom message events that want to cancel the command handler on certain conditions.
 const interceptRules: ((message: Message) => boolean)[] = [(message) => message.author.bot];
@@ -46,7 +47,7 @@ export function attachMessageHandlerToClient(client: Client) {
         const send = channel.send.bind(channel);
         const reply = message.reply.bind(message);
         const text = content;
-        const menu = {
+        const menu: CommandMenu = {
             author,
             channel,
             client,
@@ -59,7 +60,7 @@ export function attachMessageHandlerToClient(client: Client) {
         };
 
         // Execute a dedicated block for messages in DM channels.
-        if (channel.type === "dm") {
+        if (channel.type === "DM") {
             // In a DM channel, simply forget about the prefix and execute any message as a command.
             const [header, ...args] = text.split(/ +/);
 
@@ -70,7 +71,7 @@ export function attachMessageHandlerToClient(client: Client) {
                 executedCommandListener({
                     header,
                     args: [...args],
-                    channel
+                    channel: (await client.channels.fetch(channel.id, {cache: true})) as DMChannel
                 });
 
                 // Send the arguments to the command to resolve and execute.
@@ -118,7 +119,7 @@ export function attachMessageHandlerToClient(client: Client) {
                         executedCommandListener({
                             header,
                             args: [...args],
-                            channel
+                            channel: (await client.channels.fetch(channel.id, {cache: true})) as TextChannel
                         });
 
                         // Send the arguments to the command to resolve and execute.

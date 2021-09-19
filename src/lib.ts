@@ -10,28 +10,29 @@ import {
     Channel,
     GuildChannel,
     User,
-    APIMessageContentResolvable,
     MessageAdditions,
     SplitOptions,
-    APIMessage,
-    StringResolvable,
     EmojiIdentifierResolvable,
     MessageReaction,
-    PartialUser
+    PartialUser,
+    PartialDMChannel,
+    ThreadChannel,
+    MessagePayload
 } from "discord.js";
 import {reactEventListeners, emptyReactEventListeners, replyEventListeners} from "./eventListeners";
 import {client} from "./interface";
 
 export type SingleMessageOptions = MessageOptions & {split?: false};
 
-export type SendFunction = ((
-    content: APIMessageContentResolvable | (MessageOptions & {split?: false}) | MessageAdditions
-) => Promise<Message>) &
-    ((options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
-    ((options: MessageOptions | APIMessage) => Promise<Message | Message[]>) &
-    ((content: StringResolvable, options: (MessageOptions & {split?: false}) | MessageAdditions) => Promise<Message>) &
-    ((content: StringResolvable, options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
-    ((content: StringResolvable, options: MessageOptions) => Promise<Message | Message[]>);
+// export type SendFunction = ((
+//     content: string | (MessageOptions & {split?: false}) | MessageAdditions
+// ) => Promise<Message>) &
+//     ((options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
+//     ((options: MessageOptions | Message) => Promise<Message | Message[]>) &
+//     ((content: string, options: (MessageOptions & {split?: false}) | MessageAdditions) => Promise<Message>) &
+//     ((content: string, options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
+//     ((content: string, options: MessageOptions) => Promise<Message | Message[]>);
+export type SendFunction = (options: string | MessagePayload | MessageOptions) => Promise<Message>;
 
 interface PaginateOptions {
     multiPageSize?: number;
@@ -97,8 +98,8 @@ export function paginate(
                     if (emote && emote in stack) turn(stack[emote]);
 
                     // Reset the timer
-                    client.clearTimeout(timeout);
-                    timeout = client.setTimeout(destroy, idleTimeout);
+                    clearTimeout(timeout);
+                    timeout = setTimeout(destroy, idleTimeout);
                 }
             };
 
@@ -113,7 +114,7 @@ export function paginate(
             reactInOrder(message, Object.keys(stack));
             reactEventListeners.set(message.id, handle);
             emptyReactEventListeners.set(message.id, destroy);
-            let timeout = client.setTimeout(destroy, idleTimeout);
+            let timeout = setTimeout(destroy, idleTimeout);
         }
     });
 }
@@ -122,9 +123,14 @@ export async function poll(message: Message, emotes: string[], duration = 60000)
     if (emotes.length === 0) throw new Error("poll() was called without any emotes.");
 
     reactInOrder(message, emotes);
+    const filter = (reaction: MessageReaction) => !!reaction.emoji.name && emotes.includes(reaction.emoji.name);
     const reactions = await message.awaitReactions(
-        (reaction: MessageReaction) => !!reaction.emoji.name && emotes.includes(reaction.emoji.name),
-        {time: duration}
+        {
+            filter,
+            time: duration
+        }
+        // (reaction: MessageReaction) => !!reaction.emoji.name && emotes.includes(reaction.emoji.name),
+        // {time: duration}
     );
     const reactionsByCount: {[emote: string]: number} = {};
 
@@ -195,7 +201,7 @@ export function askForReply(message: Message, listenTo: string, timeout?: number
         });
 
         if (timeout) {
-            client.setTimeout(() => {
+            setTimeout(() => {
                 if (!message.deleted) message.delete();
                 replyEventListeners.delete(referenceID);
                 resolve(null);
@@ -215,26 +221,28 @@ export function generateOneTimePrompt<T>(
         // First, start reacting to the message in order.
         reactInOrder(message, Object.keys(stack));
 
-        // Then setup the reaction listener in parallel.
-        await message.awaitReactions(
-            (reaction: MessageReaction, user: User) => {
-                if (user.id === listenTo || listenTo === null) {
-                    const emote = reaction.emoji.name;
+        // Function to filter reactions to collect
+        const filter = (reaction: MessageReaction, user: User) => {
+            if (user.id === listenTo || listenTo === null) {
+                const emote = reaction.emoji.name;
 
-                    if (emote && emote in stack) {
-                        resolve(stack[emote]);
-                        message.delete();
-                    }
+                if (emote && emote in stack) {
+                    resolve(stack[emote]);
+                    message.delete();
                 }
+            }
 
-                // CollectorFilter requires a boolean to be returned.
-                // My guess is that the return value of awaitReactions can be altered by making a boolean filter.
-                // However, because that's not my concern with this command, I don't have to worry about it.
-                // May as well just set it to false because I'm not concerned with collecting any reactions.
-                return false;
-            },
-            {time: duration}
-        );
+            // CollectorFilter requires a boolean to be returned.
+            // My guess is that the return value of awaitReactions can be altered by making a boolean filter.
+            // However, because that's not my concern with this command, I don't have to worry about it.
+            // May as well just set it to false because I'm not concerned with collecting any reactions.
+            return false;
+        };
+        // Then setup the reaction listener in parallel.
+        await message.awaitReactions({
+            filter,
+            time: duration
+        });
 
         if (!message.deleted) {
             message.delete();
@@ -307,7 +315,7 @@ export function getChannelByName(name: string): GuildChannel | string {
 }
 
 export async function getMessageByID(
-    channel: TextChannel | DMChannel | NewsChannel | string,
+    channel: TextChannel | DMChannel | PartialDMChannel | NewsChannel | ThreadChannel | string,
     id: string
 ): Promise<Message | string> {
     if (typeof channel === "string") {
