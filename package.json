@@ -1,5 +1,5 @@
 {
-    "name": "onion-lasers",
+    "name": "onion-lasers-v13",
     "version": "2.0.0",
     "description": "A declarative, structure-agnostic, TypeScript-centric command handler for discord.js.",
     "main": "dist/index.js",
