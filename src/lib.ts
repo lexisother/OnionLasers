@@ -10,19 +10,15 @@ import {
     Channel,
     GuildChannel,
     User,
-    MessageAdditions,
-    SplitOptions,
     EmojiIdentifierResolvable,
     MessageReaction,
     PartialUser,
     PartialDMChannel,
     ThreadChannel,
-    MessagePayload
+    TextBasedChannels
 } from "discord.js";
 import {reactEventListeners, emptyReactEventListeners, replyEventListeners} from "./eventListeners";
 import {client} from "./interface";
-
-export type SingleMessageOptions = MessageOptions & {split?: false};
 
 // export type SendFunction = ((
 //     content: string | (MessageOptions & {split?: false}) | MessageAdditions
@@ -32,7 +28,8 @@ export type SingleMessageOptions = MessageOptions & {split?: false};
 //     ((content: string, options: (MessageOptions & {split?: false}) | MessageAdditions) => Promise<Message>) &
 //     ((content: string, options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
 //     ((content: string, options: MessageOptions) => Promise<Message | Message[]>);
-export type SendFunction = (options: string | MessagePayload | MessageOptions) => Promise<Message>;
+// export type SendFunction = (options: string | MessagePayload | MessageOptions) => Promise<Message>;
+export type SendFunction = TextBasedChannels["send"];
 
 interface PaginateOptions {
     multiPageSize?: number;
@@ -50,7 +47,7 @@ export function paginate(
     send: SendFunction,
     listenTo: string | null,
     totalPages: number,
-    onTurnPage: (page: number, hasMultiplePages: boolean) => SingleMessageOptions,
+    onTurnPage: (page: number, hasMultiplePages: boolean) => MessageOptions,
     options?: PaginateOptions
 ): Promise<number> {
     if (totalPages < 1) throw new Error(`totalPages on paginate() must be 1 or more, ${totalPages} given.`);

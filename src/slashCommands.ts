@@ -5,54 +5,11 @@ import {
     ApplicationCommandData,
     ApplicationCommandOptionData,
     ApplicationCommandOptionChoice,
-    ApplicationCommandOption,
-    ApplicationCommandNonOptionsData,
-    ApplicationCommandChoicesData,
-    ApplicationCommandSubCommandData
+    ApplicationCommandSubCommandData,
+    ApplicationCommandSubCommand
 } from "discord.js";
 import {slashCommandRegistry} from "./loader";
 import {NO_DESCRIPTION} from "./util";
-
-export enum SlashCommandOptionType {
-    SUB_COMMAND = 1,
-    SUB_COMMAND_GROUP = 2,
-    STRING = 3,
-    INTEGER = 4,
-    BOOLEAN = 5,
-    USER = 6,
-    CHANNEL = 7,
-    ROLE = 8,
-    MENTIONABLE = 9,
-    NUMBER = 10
-}
-
-interface RestrictedApplicationCommandOptionBase {
-    type: Exclude<SlashCommandOptionType, SlashCommandOptionType.STRING | SlashCommandOptionType.INTEGER>;
-    name: string;
-    description?: string;
-    required?: boolean;
-}
-
-interface RestrictedApplicationCommandOptionString {
-    type: SlashCommandOptionType.STRING;
-    name: string;
-    description?: string;
-    required?: boolean;
-    choices?: {[name: string]: string};
-}
-
-interface RestrictedApplicationCommandOptionInteger {
-    type: SlashCommandOptionType.INTEGER;
-    name: string;
-    description?: string;
-    required?: boolean;
-    choices?: {[name: string]: number};
-}
-
-type RestrictedApplicationCommandOption =
-    | RestrictedApplicationCommandOptionBase
-    | RestrictedApplicationCommandOptionString
-    | RestrictedApplicationCommandOptionInteger;
 
 interface SlashCommandOptionsRootBase {
     readonly description?: string;
@@ -63,7 +20,7 @@ interface SlashCommandOptionsRootBase {
 interface SlashCommandOptionsRootEndpoint extends SlashCommandOptionsRootBase {
     readonly ephemeral?: boolean;
     readonly run?: (interaction: CommandInteraction) => Promise<any> | string;
-    readonly options?: ApplicationCommandOption[];
+    readonly options?: ApplicationCommandSubCommand["options"];
     readonly subcommands?: undefined;
 }
 
@@ -80,7 +37,7 @@ interface SlashCommandOptionsNodeBase {
 interface SlashCommandOptionsEndpoint extends SlashCommandOptionsNodeBase {
     readonly ephemeral?: boolean;
     readonly run?: (interaction: CommandInteraction) => Promise<any> | string;
-    readonly options?: ApplicationCommandOption[];
+    readonly options?: ApplicationCommandSubCommand["options"];
     readonly subcommands?: undefined;
 }
 
@@ -117,13 +74,13 @@ export class SlashCommand {
 
             for (const [header, subcommand] of Object.entries(this.data.subcommands)) {
                 if (subcommand.subcommands) {
-                    const suboptions: (ApplicationCommandNonOptionsData | ApplicationCommandChoicesData)[] = [];
+                    const suboptions: ApplicationCommandSubCommandData[] = [];
 
                     for (const [subheader, subsubcommand] of Object.entries(subcommand.subcommands)) {
                         suboptions.push({
                             name: subheader,
                             description: subsubcommand.description || NO_DESCRIPTION,
-                            type: 1, // SUB_COMMAND
+                            type: "SUB_COMMAND",
                             options: SlashCommand.getOptionsArray(subsubcommand.options)
                         });
                     }
@@ -131,14 +88,14 @@ export class SlashCommand {
                     options.push({
                         name: header,
                         description: subcommand.description || NO_DESCRIPTION,
-                        type: 2, // SUB_COMMAND_GROUP
+                        type: "SUB_COMMAND_GROUP",
                         options: suboptions
                     });
                 } else {
                     options.push({
                         name: header,
                         description: subcommand.description || NO_DESCRIPTION,
-                        type: 1, // SUB_COMMAND
+                        type: "SUB_COMMAND",
                         options: SlashCommand.getOptionsArray(subcommand.options)
                     });
                 }
@@ -171,10 +128,12 @@ export class SlashCommand {
         return null;
     }
 
-    private static getOptionsArray(data?: ApplicationCommandOption[]): ApplicationCommandOptionData[] | undefined {
+    private static getOptionsArray(
+        data?: ApplicationCommandSubCommand["options"]
+    ): ApplicationCommandSubCommandData["options"] | undefined {
         if (!data) return undefined;
 
-        const options: ApplicationCommandOptionData[] = [];
+        const options: ApplicationCommandSubCommandData["options"] = [];
 
         for (const inboundOptions of data) {
             const {type, name, description, required} = inboundOptions;
