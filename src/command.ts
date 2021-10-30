@@ -35,7 +35,8 @@ const patterns = {
     role: /^<@&(\d{17,})>$/,
     emote: /^<a?:.*?:(\d{17,})>$/,
     // The message type won't include <username>#<tag>. At that point, you may as well just use a search usernames function. Even then, tags would only be taken into account to differentiate different users with identical usernames.
-    messageLink: /^https?:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/channels\/(?:\d{17,}|@me)\/(\d{17,})\/(\d{17,})$/,
+    messageLink:
+        /^https?:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/channels\/(?:\d{17,}|@me)\/(\d{17,})\/(\d{17,})$/,
     messagePair: /^(\d{17,})-(\d{17,})$/,
     user: /^<@!?(\d{17,})>$/,
     id: /^(\d{17,})$/
@@ -284,7 +285,7 @@ export class Command extends BaseCommand {
                 // Then capture any potential errors.
                 try {
                     await this.run(menu);
-                } catch (error) {
+                } catch (error: any) {
                     const errorMessage = error.stack ?? error;
                     console.error(`Command Error: ${metadata.header} (${metadata.args.join(", ")})\n${errorMessage}`);
 
@@ -671,7 +672,7 @@ export class RestCommand extends BaseCommand {
                 // Args will still be kept intact. A common pattern is popping some parameters off the end then doing some branching.
                 // That way, you can still declaratively mark an argument list as continuing while also handling the individual args.
                 await this.run({...menu, args: menu.args, combined});
-            } catch (error) {
+            } catch (error: any) {
                 const errorMessage = error.stack ?? error;
                 console.error(`Command Error: ${metadata.header} (${metadata.args.join(", ")})\n${errorMessage}`);
 

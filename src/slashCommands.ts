@@ -118,7 +118,7 @@ export class SlashCommand {
         } else {
             try {
                 await this.run?.(interaction);
-            } catch (error) {
+            } catch (error: any) {
                 const errorMessage = error.stack ?? error;
 
                 return `There was an error trying to execute that command!\n\`\`\`${errorMessage}\`\`\``;
@@ -232,7 +232,7 @@ export function attachSlashCommandHandlerToClient(client: Client, devServers: st
                 // Errors will silently fail apparently and then there'll be an "failed response" message.
                 try {
                     await command.execute(interaction);
-                } catch (error) {
+                } catch (error: any) {
                     const errorMessage = error?.stack ?? error;
                     console.error(errorMessage); // TODO: Add the executed command info.
                     interaction.reply({
