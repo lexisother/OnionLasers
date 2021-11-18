@@ -102,9 +102,11 @@ export function paginate(
 
             // When time's up, remove the bot's own reactions.
             const destroy = () => {
-                reactEventListeners.delete(message.id);
-                for (const emote of message.reactions.cache.values()) emote.users.remove(message.author);
-                resolve(page);
+                if (message) {
+                    reactEventListeners.delete(message.id);
+                    for (const emote of message.reactions.cache.values()) emote.users.remove(message.author);
+                    resolve(page);
+                }
             };
 
             // Start the reactions and call the handler.
