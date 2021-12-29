@@ -6,7 +6,8 @@ import {
     ApplicationCommandOptionData,
     ApplicationCommandOptionChoice,
     ApplicationCommandSubCommandData,
-    ApplicationCommandSubCommand
+    ApplicationCommandSubCommand,
+    BaseApplicationCommandOptionsData
 } from "discord.js";
 import {slashCommandRegistry} from "./loader";
 import {NO_DESCRIPTION} from "./util";
@@ -49,6 +50,16 @@ interface SlashCommandOptionsGroup extends SlashCommandOptionsNodeBase {
 }
 
 type SlashCommandOptionsNode = SlashCommandOptionsEndpoint | SlashCommandOptionsGroup;
+
+// Many thanks to The ._.dministrator#9187
+// `T extends Array<infer U> ? U` basically says
+// if the type passed in T extends an array of type U, return U
+// U is infered as the type in the array
+type ArrayType<T> = T extends Array<infer U> ? U : never;
+interface ApplicationCommandAllData extends BaseApplicationCommandOptionsData {
+    type: ArrayType<ApplicationCommandSubCommandData["options"]>["type"];
+    choices?: ApplicationCommandOptionChoice[];
+}
 
 export class SlashCommand {
     private readonly data: SlashCommandOptionsRoot;
@@ -133,7 +144,7 @@ export class SlashCommand {
     ): ApplicationCommandSubCommandData["options"] | undefined {
         if (!data) return undefined;
 
-        const options: ApplicationCommandSubCommandData["options"] = [];
+        const options: ApplicationCommandAllData[] = [];
 
         for (const inboundOptions of data) {
             const {type, name, description, required} = inboundOptions;

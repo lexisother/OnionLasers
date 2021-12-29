@@ -6,7 +6,7 @@ import {
     User,
     GuildMember,
     GuildChannel,
-    TextBasedChannels,
+    TextBasedChannel,
     TextChannel
 } from "discord.js";
 import {getChannelByID, getGuildByID, getMessageByID, getUserByID, SendFunction} from "./lib";
@@ -62,7 +62,7 @@ export interface CommandMenu {
     readonly client: Client;
     readonly message: Message;
     // readonly channel: TextChannel | DMChannel | PartialDMChannel | NewsChannel | ThreadChannel;
-    readonly channel: TextBasedChannels;
+    readonly channel: TextBasedChannel;
     readonly guild: Guild | null;
     readonly author: User;
     // According to the documentation, a message can be part of a guild while also not having a

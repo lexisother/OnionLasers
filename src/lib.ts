@@ -1,5 +1,6 @@
 // Library for Discord-specific functions
 import {
+    AnyChannel,
     Message,
     Guild,
     GuildMember,
@@ -15,7 +16,7 @@ import {
     PartialUser,
     PartialDMChannel,
     ThreadChannel,
-    TextBasedChannels
+    TextBasedChannel
 } from "discord.js";
 import {reactEventListeners, emptyReactEventListeners, replyEventListeners} from "./eventListeners";
 import {client} from "./interface";
@@ -29,7 +30,7 @@ import {client} from "./interface";
 //     ((content: string, options: MessageOptions & {split: true | SplitOptions}) => Promise<Message[]>) &
 //     ((content: string, options: MessageOptions) => Promise<Message | Message[]>);
 // export type SendFunction = (options: string | MessagePayload | MessageOptions) => Promise<Message>;
-export type SendFunction = TextBasedChannels["send"];
+export type SendFunction = TextBasedChannel["send"];
 
 interface PaginateOptions {
     multiPageSize?: number;
@@ -292,7 +293,7 @@ export function getGuildByName(name: string): Guild | string {
 }
 
 // https://github.com/discordjs/discord.js/pull/5422
-export async function getChannelByID(id: string): Promise<Channel | string> {
+export async function getChannelByID(id: string): Promise<AnyChannel | string> {
     try {
         return (
             (await client.channels.fetch(id)) ||
@@ -321,7 +322,7 @@ export async function getMessageByID(
         const targetChannel = await getChannelByID(channel);
         if (targetChannel instanceof TextChannel || targetChannel instanceof DMChannel) channel = targetChannel;
         else if (targetChannel instanceof Channel) return `\`${id}\` isn't a valid text-based channel!`;
-        else return targetChannel;
+        else return channel;
     }
 
     try {
