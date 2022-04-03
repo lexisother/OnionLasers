@@ -84,7 +84,12 @@ export function attachMessageHandlerToClient(client: Client) {
 
                 // If something went wrong, let the user know (like if they don't have permission to use a command).
                 if (result) {
-                    send(result);
+                    send({
+                        content: result,
+                        allowedMentions: {
+                            parse: []
+                        }
+                    });
                 }
             } else {
                 send(
@@ -132,7 +137,12 @@ export function attachMessageHandlerToClient(client: Client) {
 
                         // If something went wrong, let the user know (like if they don't have permission to use a command).
                         if (result) {
-                            send(result);
+                            send({
+                                content: result,
+                                allowedMentions: {
+                                    parse: []
+                                }
+                            });
                         }
                     }
                     // Otherwise, let the sender know that the bot doesn't have permission to send messages.

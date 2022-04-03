@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1](https://github.com/lexisother/OnionLasers/compare/v2.2.0...v2.2.1) - 2022-04-03
+
+## Fixed
+
+- Disabled mention parsing on command error handling
+
+## [2.2.0](https://github.com/lexisother/OnionLasers/compare/v2.1.1...v2.2.0) - 2021-12-29
+
+### Added
+
+- Support for Discord.JS v13.5.0
+
 ## [2.1.1](https://github.com/lexisother/OnionLasers/compare/v2.1.0...v2.1.1) - 2021-11-18
 
 ### Changed
